@@ -1,0 +1,8 @@
+{
+  "name": "traffic_freiburg",
+  "version": "1.0.0",
+  "trafficLayer":"INRIX Line Data",
+  "kameraLayer":"Kameras",
+  "dev":false,
+  "wsURL":"wss://pilot.dksr.city/OutboundInterfaces/outbound/inrixFreiburgDataEventTypeStatement"
+}
