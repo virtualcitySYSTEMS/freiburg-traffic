@@ -170,6 +170,7 @@ export default {
         itemsToRequest:[],
         layer:'',
         deleteAll:false,
+        unwatch:'',
       }
     },
     watch: {

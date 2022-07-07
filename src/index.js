@@ -15,8 +15,12 @@ const routes=[
 const store = {
   state:{
     open:'liveTraffic',
+    selectedCams:[],
     activeCams:[],
     flLiveCams:[],
+    selectedHistoricCams:[],
+    activeHistoricCams:[],
+    flHistoricCams:[],
     records:[],
   },
 /*   state: {

@@ -18,7 +18,7 @@
     >
       <div class="scroll-spacer">
         <SubButton
-          @click="close()"
+          @click="close(object)"
           class="close vcm-btn-icon cancel-icon"
           title="Kamera aus Liste der Live-Kameras entfernen..."
         ></SubButton>
@@ -291,18 +291,22 @@ export default {
         this.$store.state.traffic_freiburg.activeCams.push(o);
         let index = this.$store.state.traffic_freiburg.flLiveCams.findIndex(x => x.id ===o.id);
         this.$store.state.traffic_freiburg.flLiveCams.splice(index, 1);
-        this.close();
+        //this.$store.state.traffic_freiburg.selectedCams.push({id:feature.getId(),camId:props.id});
+        this.close(o,true);
       }else{
         toastr["error"]('Kameramenü enthält bereits 3 Kameras. Die aktuelle Kamera kann nicht wieder angedockt werden. Bitte eine Kamera aus dem Menü entfernen, oder diese Kamera aus der Kameraliste entfernen.');
       }
 
     },
-    close() {
-      if(this.$store.state.traffic_freiburg.flLiveCams.length===1){
-        this.$store.state.traffic_freiburg.flLiveCams.pop();
-      }else{
-        this.$store.state.traffic_freiburg.flLiveCams.splice(this.index, 1);
-      }
+    close(o,dock=false) {
+        let index = this.$store.state.traffic_freiburg.flLiveCams.findIndex(x => x.id ===o.id);
+        if(index){
+          if(!dock){
+            this.$store.state.traffic_freiburg.selectedCams.splice(index,1);
+          }
+          this.$store.state.traffic_freiburg.flLiveCams.splice(index, 1);
+        }
+
     },
   },
 };

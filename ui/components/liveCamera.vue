@@ -19,7 +19,7 @@
       </div>
       <div class="message-body">
         <div class="message-content">
-            <p style="margin: 0.5rem;"><small style="line-height: 1 !important;"> <i class="fa fa-info-circle" aria-hidden="true" ></i>Bitte selektieren sie per click auf ein Kameraicon, die Kameras die sie sehen wollen. Bis zu 3 Kameras können gleichzeitig angezeigt werden!</small></p>
+            <p style="margin: 0.5rem;"><small style="line-height: 1 !important;"> <i class="fa fa-info-circle" aria-hidden="true" ></i> Bitte selektieren sie per click auf ein Kameraicon, die Kameras die sie sehen wollen. Bis zu 3 Kameras können gleichzeitig angezeigt werden!</small></p>
             <button v-if="cams.length > 0" class="rec-button" title="Durch Click wird die Aufnahme der oben ausgewählten Kameras gestartet." @click="startRecord()"><i class="fa fa-video-camera" aria-hidden="true" ></i> Aufnahme für alle Kameras starten</button>
             <div class="container" v-for="(object, i) in cams" :key="i">
               <img v-if="!dev" :src="object.url" alt="Hier sollte ein Bild sein" style="width:280px;">
@@ -35,6 +35,36 @@
     </article>
 </template>
 <style scoped>
+/* .message {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+}
+.message-header {
+  cursor: pointer;
+  background-color: #555555;
+  color: white;
+  padding: 0.5rem;
+}
+.message-body {
+  padding: 0;
+  max-height: 58rem;
+  overflow: hidden;
+  transition: 0.3s ease all;
+  border-color: #555555;
+}
+.is-closed .message-body {
+  max-height: 0;
+}
+.message-content {
+  padding: 0 0.5rem 0.5rem 0.5rem;
+  border-color: #555555;
+  color: #444444;
+  border: outset;
+  margin-bottom: 1rem;
+  max-height: fit-content;
+} */
 .message {
   /*max-width: 60rem;*/
   margin-left: auto;
@@ -50,8 +80,8 @@
 }
 .message-body {
   padding: 0;
-  max-height: 55rem;
-  overflow: hidden;
+  max-height: 35rem;
+  overflow: auto;
   transition: 0.3s ease all;
   border-color: #555555;
 }
@@ -59,12 +89,12 @@
   max-height: 0;
 }
 .message-content {
-  padding: 0 0.5rem 0.5rem 0.5rem;
+  padding: 0.5rem;
   border-color: #555555;
   color: #444444;
   border: outset;
-  margin-bottom: 1rem;
-  max-height: 650px;
+  margin-bottom: 0.5rem;
+  max-height: fit-content;
 }
 /* Container holding the image and the text */
 .container {
@@ -73,12 +103,15 @@
   color: crimson;
 
 }
+
 .rec-button {
-  width: 92%;
+  width: 98%;
   display: block;
   color: #fff;
-  margin-left:12px;
+  margin-left:4px;
+  margin-bottom: 0.5rem;
   background-color: #409d76;
+
 }
 .rec-button:hover {
   color: dimgray;
@@ -258,6 +291,7 @@ export default {
       this.unwatch=this.$store.watch(
         (state)=>{
           //console.log(this.$store.state.traffic_freiburg.open);
+
          this.isOpen=this.$store.state.traffic_freiburg.open==='liveCamera'?true:false;
          if(this.isOpen){
           var layerName = uiConfig['kameraLayer'];
@@ -274,12 +308,15 @@ export default {
                 var res1=this.$store.state.traffic_freiburg.activeCams.filter((el)=>el.id===props.id);
                 if(vm.cams.length<3 && res.length ===0 && res1.length===0){
                   vm.cams.push(props);
-                  vm.itemsToRequest.push({id:feature.getId(),camId:props.id});
+                  //vm.itemsToRequest.push({id:feature.getId(),camId:props.id});
+                  state.traffic_freiburg.selectedCams.push({id:feature.getId(),camId:props.id});
                 }else if(res.length===0 && res1.length===0){
                   vm.cams.shift();
-                  vm.itemsToRequest.shift();
+                  //vm.itemsToRequest.shift();
+                  state.traffic_freiburg.selectedCams.shift();
                   vm.cams.push(props);
-                  vm.itemsToRequest.push({id:feature.getId(),camId:props.id});
+                  //vm.itemsToRequest.push({id:feature.getId(),camId:props.id});
+                  state.traffic_freiburg.selectedCams.push({id:feature.getId(),camId:props.id});
                 }else{
                   toastr["error"]('Die Kamera wird bereits auf dem Bildschirm angezeigt!');
                 }
@@ -289,6 +326,7 @@ export default {
               }
             }
           });
+          this.itemsToRequest= state.traffic_freiburg.selectedCams;
           vcs.vcm.Framework.getInstance().eventHandler.addExclusiveInteraction(interaction, () => { console.log('Exclusive click interaction for cams removed');});
 /*           if(!this.listener){
             this.listener = vcs.vcm.Framework.getInstance().subscribe("FEATURE_CLICKED", (id, object, layer) => {
@@ -310,7 +348,7 @@ export default {
                 vm.$forceUpdate();
               });
             }*/
-          }else{
+          }else if(!this.isOpen && this.$store.state.traffic_freiburg.open==='liveCamera'){
             vcs.vcm.Framework.getInstance().eventHandler.removeExclusive();
           }
         }
@@ -325,6 +363,7 @@ export default {
         recording:false,
         dev:false,
         layer:'',
+        unwatch:'',
         cameras:[{cam:1, url:'https://via.placeholder.com/280x150'},{cam:2, url:'https://via.placeholder.com/280x150'},{cam:3, url:'https://via.placeholder.com/280x150'}
         ]
       }
@@ -367,9 +406,9 @@ export default {
       remove(index,popout=false){
         this.cams.splice(index, 1);
         if(!popout){
-          this.itemsToRequest.splice(index,1);
+          this.$store.state.traffic_freiburg.selectedCams.splice(index,1);
+          //this.itemsToRequest.splice(index,1);
         }
-        
         this.$store.state.traffic_freiburg.activeCams=this.cams;
       }           
     },

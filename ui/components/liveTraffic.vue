@@ -119,6 +119,7 @@ export default {
       return {
         isOpen: this.$store.state.traffic_freiburg.open==='liveTraffic'?true:false,
         enabled:this.isOpen,
+        unwatch:'',
 
       }
     },
