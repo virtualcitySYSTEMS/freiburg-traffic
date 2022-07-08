@@ -34,7 +34,7 @@
             <img v-if="dev" src="/global/Freiburg_Traffic/test.png" alt="Hier sollte ein Bild sein" style="width:280px;">
             <div class="bottom-right" style="background-color: white; opacity: 0.6; padding: 2px;">{{object.name}}</div>
             <span class="vcm-btn-icon pop-out top-right2" @click="popOut(object,i)" title="Kamera vom Menü lösen..." style="cursor: pointer; pointer-events:auto;"/>
-            <span @click="remove(i)" class="vcm-btn-icon closing top-right" title="Kamera aus Liste der Live-Kameras entfernen..." style="cursor: pointer; pointer-events:auto;"></span>
+            <span @click="remove(object)" class="vcm-btn-icon closing top-right" title="Kamera aus Liste der Live-Kameras entfernen..." style="cursor: pointer; pointer-events:auto;"></span>
           </div>             
         </div>
       </div>
@@ -269,23 +269,6 @@ export default {
           });
           this.itemsToRequest= this.$store.state.traffic_freiburg.selectedHistoricCams;
           vcs.vcm.Framework.getInstance().eventHandler.addExclusiveInteraction(interaction, () => { console.log('Exclusive click interaction for cams removed');});
-/*           if(!this.listener){
-            this.listener = vcs.vcm.Framework.getInstance().subscribe("FEATURE_CLICKED", (id, object, l) => {
-                //console.log(object);
-                if(this.layer.name===l.name){
-                  let props = object.getProperties();
-                  if(vm.itemList.length <50){
-                    vm.itemList.push(props.code);
-                    vm.itemsToRequest.push(id);
-                    vm.itemsToRequest= [...new Set(vm.itemsToRequest)];
-                    vm.itemList= [...new Set(vm.itemList)];
-                    console.log(vm.itemList);
-                  }else{
-                    toastr["error"]('Zu viele Straßensegmente für die Anfrage ausgewählt. Die Begrenzung liegt bei 50 Straßensegmenten\n');
-                  }
-                }
-              });
-            } */
         }else if(!val && this.$store.state.traffic_freiburg.open==='historicCamera'){
           this.unwatch();
           vcs.vcm.Framework.getInstance().eventHandler.removeExclusive();
@@ -347,7 +330,28 @@ export default {
         //recPost.camIds=this.cams.map((el)=>el.id);
         toastr["info"]('Die Anfrage an das Backend wurde gesendet, mit folgenden Angaben: '+JSON.stringify(recPost) + '\n');
         if (this.layer != "") {this.layer.featureVisibility.clearHighlighting();}
-      },                         
+      }, 
+      popOut(object,index) {
+        // `this` inside methods points to the Vue instance
+        if(this.$store.state.traffic_freiburg.flHistoricCams.length<3){
+          var res=this.$store.state.traffic_freiburg.flHistoricCams.filter((el)=>el.id===object.id);
+          if(res.length===0){
+            this.$store.state.traffic_freiburg.flHistoricCams.push(object);
+            this.remove(object,true);
+          }
+        }
+      },
+      remove(o,popout=false){
+        let index = this.$store.state.traffic_freiburg.activeHistoricCams.findIndex(x => x.id ===o.id);
+        if(index!=-1){
+          //this.cams.splice(index, 1);
+          if(!popout){
+            this.$store.state.traffic_freiburg.selectedHistoricCams.splice(index,1);
+          }
+          this.$store.state.traffic_freiburg.activeHistoricCams.splice(index, 1);
+          this.cams=this.$store.state.traffic_freiburg.activeHistoricCams;
+        }
+      }                              
     }
 }
 </script>

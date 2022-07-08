@@ -27,7 +27,7 @@
               <div class="bottom-right" style="background-color: white; opacity: 0.6; padding: 2px;">{{object.name}}</div>
               <button v-if="records.includes(object.id)" class="recording Rec top-right3"></button>
               <span class="vcm-btn-icon pop-out top-right2" @click="popOut(object,i)" title="Kamera vom Menü lösen..." style="cursor: pointer; pointer-events:auto;"/>
-              <span @click="remove(i)" class="vcm-btn-icon closing top-right" title="Kamera aus Liste der Live-Kameras entfernen..." style="cursor: pointer; pointer-events:auto;"></span>
+              <span @click="remove(object)" class="vcm-btn-icon closing top-right" title="Kamera aus Liste der Live-Kameras entfernen..." style="cursor: pointer; pointer-events:auto;"></span>
             </div>
           
         </div>
@@ -399,18 +399,21 @@ export default {
           var res=this.$store.state.traffic_freiburg.flLiveCams.filter((el)=>el.id===object.id);
           if(res.length===0){
             this.$store.state.traffic_freiburg.flLiveCams.push(object);
-            this.remove(index,true);
+            this.remove(object,true);
           }
         }
       },
-      remove(index,popout=false){
-        this.cams.splice(index, 1);
-        if(!popout){
-          this.$store.state.traffic_freiburg.selectedCams.splice(index,1);
-          //this.itemsToRequest.splice(index,1);
+      remove(o,popout=false){
+        let index = this.$store.state.traffic_freiburg.activeCams.findIndex(x => x.id ===o.id);
+        if(index!=-1){
+          //this.cams.splice(index, 1);
+          if(!popout){
+            this.$store.state.traffic_freiburg.selectedCams.splice(index,1);
+          }
+          this.$store.state.traffic_freiburg.activeCams.splice(index, 1);
+          this.cams=this.$store.state.traffic_freiburg.activeCams;
         }
-        this.$store.state.traffic_freiburg.activeCams=this.cams;
-      }           
+      }       
     },
     destroyed() {
       this.unwatch();

@@ -2,6 +2,7 @@ import { version } from '../package.json';
 import { activateWSLayer } from './live';
 import traffic from '../ui/traffic_ui/traffic.vue';
 import liveCamFLComponent from '../ui/camsFloating/flLiveCamsMapComponent';
+import historicCamFLComponent from '../ui/camsFloating/flHistoricCamsMapComponent';
 
 const routes=[
   {
@@ -55,7 +56,7 @@ export default {
     routes,
     store,
     //mapComponent: [traffic],
-    mapComponent: [liveCamFLComponent],
+    mapComponent: [liveCamFLComponent, historicCamFLComponent],
     supportedMaps: ["vcs.vcm.maps.Cesium", "vcs.vcm.maps.Openlayers"],
     headerButton: [ // you can add multiple buttons as an array
       '<a title="Anzeige des Live-Traffics..." class="" href="#/traffic" style="text-decoration: none; color:#777777" ><span class="header-btn-text">Verkehrsinformationen</span></a>',

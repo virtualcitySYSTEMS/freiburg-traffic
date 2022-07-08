@@ -22,7 +22,6 @@
           class="close vcm-btn-icon cancel-icon"
           title="Kamera aus Liste der Live-Kameras entfernen..."
         ></SubButton>
-        <SubButton v-if="records.includes(object.id)" class="vcm-btn-icon recording Rec top-right3"></SubButton>
         <SubButton class="vcm-btn-icon pop-out top-right2" @click="dock(object)" title="Kamera an Menü andocken..." style="cursor: pointer; pointer-events:auto;"/>
         <div>
           <img v-if="!dev" :src="object.url" alt="Hier sollte ein Bild sein" :height="height"/>
@@ -188,6 +187,23 @@
 import Draggable from "vue-draggable-resizable";
 import "vue-draggable-resizable/dist/VueDraggableResizable.css";
 import toastr from "toastr";
+toastr.options={
+  "closeButton": true,
+  "debug": false,
+  "newestOnTop": false,
+  "progressBar": false,
+  "positionClass": "toast-top-center",
+  "preventDuplicates": false,
+  "showDuration": "1000",
+  "hideDuration": "1000",
+  "tapToDismiss" :true,
+  "timeOut": "3000",
+  "extendedTimeOut": "1000",
+  "showEasing": "swing",
+  "hideEasing": "linear",
+  "showMethod": "fadeIn",
+  "hideMethod": "fadeOut"
+}    
 let id=0;
 function nextId() {
   id += 1;
@@ -195,7 +211,7 @@ function nextId() {
 }
 
 export default {
-  name: "flLiveCam",
+  name: "flHistoricCam",
   i18n: {
     messages: {
       de: {
@@ -213,12 +229,10 @@ export default {
     Draggable,
   },
   styling: null,
-  mounted() {},
   destroyed() {},
   data() {
     return {
       dev:false,
-      records:this.$store.state.traffic_freiburg.records,
       container: "Kamera "+nextId(),
       resizable: false,
       object:{},
@@ -228,35 +242,17 @@ export default {
       imagHeight:180,
       x: 338,
       y: 83,
-      toastr: {
-        options:{
-            "closeButton": true,
-            "debug": false,
-            "newestOnTop": false,
-            "progressBar": false,
-            "positionClass": "toast-top-center",
-            "preventDuplicates": false,
-            "showDuration": "1000",
-            "hideDuration": "1000",
-            "tapToDismiss" :true,
-            "timeOut": "3000",
-            "extendedTimeOut": "1000",
-            "showEasing": "swing",
-            "hideEasing": "linear",
-            "showMethod": "fadeIn",
-            "hideMethod": "fadeOut"
-        }
-      }      
+      
     };
   },
   created() {
-    this.index = this.$store.state.traffic_freiburg.flLiveCams.length-1;
-    this.id = this.$store.state.traffic_freiburg.flLiveCams[this.index].id;
+    this.index = this.$store.state.traffic_freiburg.flHistoricCams.length-1;
+    this.id = this.$store.state.traffic_freiburg.flHistoricCams[this.index].id;
   },
   mounted(){
     const uiConfig = vcs.vcm.Framework.getInstance().getConfig('plugins').filter((elm)=>elm.name==='traffic_freiburg')[0];
     this.dev = uiConfig['dev'];
-    this.object=this.$store.state.traffic_freiburg.flLiveCams[this.index];
+    this.object=this.$store.state.traffic_freiburg.flHistoricCams[this.index];
     var vm=this;
     this.getMeta(this.object.url, function(width, height) {
       vm.height = (vm.width/width)*height;
@@ -282,24 +278,24 @@ export default {
        }
     },
     dock(o){
-      if(this.$store.state.traffic_freiburg.activeCams.length<3){
-        this.$store.state.traffic_freiburg.activeCams.push(o);
-        let index = this.$store.state.traffic_freiburg.flLiveCams.findIndex(x => x.id ===o.id);
-        this.$store.state.traffic_freiburg.flLiveCams.splice(index, 1);
+      if(this.$store.state.traffic_freiburg.activeHistoricCams.length<2){
+        this.$store.state.traffic_freiburg.activeHistoricCams.push(o);
+        let index = this.$store.state.traffic_freiburg.flHistoricCams.findIndex(x => x.id ===o.id);
+        this.$store.state.traffic_freiburg.flHistoricCams.splice(index, 1);
         //this.$store.state.traffic_freiburg.selectedCams.push({id:feature.getId(),camId:props.id});
         this.close(o,true);
       }else{
-        toastr["error"]('Kameramenü enthält bereits 3 Kameras. Die aktuelle Kamera kann nicht wieder angedockt werden. Bitte eine Kamera aus dem Menü entfernen, oder diese Kamera aus der Kameraliste entfernen.');
+        toastr["error"]('Kameramenü enthält bereits 2 Kameras. Die aktuelle Kamera kann nicht wieder angedockt werden. Bitte eine Kamera aus dem Menü entfernen, oder diese Kamera aus der Kameraliste entfernen.');
       }
 
     },
     close(o,dock=false) {
-      let index = this.$store.state.traffic_freiburg.flLiveCams.findIndex(x => x.id ===o.id);
+      let index = this.$store.state.traffic_freiburg.flHistoricCams.findIndex(x => x.id ===o.id);
       if(index!=-1){
         if(!dock){
-          this.$store.state.traffic_freiburg.selectedCams.splice(index,1);
+          this.$store.state.traffic_freiburg.selectedHistoricCams.splice(index,1);
         }
-        this.$store.state.traffic_freiburg.flLiveCams.splice(index, 1);
+        this.$store.state.traffic_freiburg.flHistoricCams.splice(index, 1);
       }
     },
   },
