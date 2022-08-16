@@ -164,7 +164,7 @@ export default {
         //console.log(this.mounted);
     },
     methods: {
-        activateLive(){
+/*         activateLive(){
             this.live=!this.live;
             this.historic=false;
            // this.connected=activateWSLayer();
@@ -172,7 +172,7 @@ export default {
         activateHistoric(){
             this.live=false;
             this.historic=!this.historic;
-        },
+        }, */
         close() {
             vcs.ui.router.push('home');
         },

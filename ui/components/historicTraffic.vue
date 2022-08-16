@@ -179,17 +179,21 @@ export default {
           const [date, time] =this.formatDate(new Date()).split(' ');
           this.start = date + 'T' + time;
           this.end=date + 'T' + time;
-          var layerName = uiConfig['trafficLayer'];
+          let layerName = uiConfig['trafficLayer'];
           this.layer = framework.getLayerByName(layerName); //var layer
-          if (this.layer != "") {this.layer.featureVisibility.clearHighlighting();}
+          if (this.layer != "") {
+            if(this.layer.hasOwnProperty("featureVisibility")){
+              this.layer.featureVisibility.clearHighlighting();
+            }
+          }
           if(this.layer && !this.layer.active){
             this.layer.activate();
           }
-          var vm = this;
+          let vm = this;
           const interaction = new clickInteraction((feature) => { 
             if(feature.hasOwnProperty("values_")){
               if(feature['values_']['code']){
-                var props = feature['values_'];
+                let props = feature['values_'];
                 if(vm.itemList.length <50){
                   vm.itemList.push(props.code);
                   vm.itemsToRequest.push(feature.getId());

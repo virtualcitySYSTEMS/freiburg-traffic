@@ -23,7 +23,7 @@
         <p v-if="!connected && enabled" style="margin-right: 1.2rem;">Um Zugang zu den Livedaten zu bekommen müssen sie Username und Passwort eingeben, damit der gesicherte Zugang ermöglicht wird. Nach erfolgreicher Eingabe der Daten können Sie den Live Verkehr anschalten und nach Erhalt der ersten Datenpakete verschwindet das IFrame Feld und Daten fließen periodisch in die Anwendung! </p>
         <p v-if="connected" style="margin-right: 1.2rem;">Die Verbindung zu den Live Verkehrsdaten wurde erfolgreich hergestellt! Die Daten fließen jetzt periodisch in die Anwendung und werden verarbeitet.</p>
         <p v-if="!connected && !enabled" style="margin-right: 1.2rem; color:red"><small>Die Verbindung zu den Live Daten konnte nicht hergestellt werden. Bitte versuchen sie es später noch einmal.</small></p>
-        <iframe v-if="!connected" src="https://pilot.dksr.city/OutboundInterfaces/outbound/inrixFreiburgDataEventTypeStatement" title="Websocket"></iframe>
+        <iframe v-if="!connected" src="https://freiburg-staging.dksr.city/OutboundInterfaces/outbound/inrixFreiburgTestDataEventTypeStatement" title="Websocket"></iframe>
         <div style="display: inline-block; margin-top: 1rem;">
             <p style="display: inline; line-height: 1.4rem;">Live Verkehr</p>
             <toggle-button :value="enabled" :sync="true" color="#82C7EB" :width="60" :labels="{checked: 'Live', unchecked: 'Aus'}" @change="activateLive()" style="float:right; margin-left: 1rem"/>
@@ -70,6 +70,8 @@
 <script type="text/babel">
 
 const framework = vcs.vcm.Framework.getInstance();
+const uiConfig = vcs.vcm.Framework.getInstance().getConfig('plugins').filter((elm)=>elm.name==='traffic_freiburg')[0];
+let ws='';
 import { ToggleButton } from 'vue-js-toggle-button';
 import { activateWSLayer } from '../../src/live.js'
 export default {
@@ -118,9 +120,9 @@ export default {
     data() {
       return {
         isOpen: this.$store.state.traffic_freiburg.open==='liveTraffic'?true:false,
-        enabled:this.isOpen,
+        enabled:false,
         unwatch:'',
-
+        connected:false
       }
     },
     methods:{ 
@@ -129,18 +131,45 @@ export default {
           this.activateLive();
       },
       activateLive(){
-          if(this.isOpen){
-            var vm = this;
-            activateWSLayer().then((resp)=>{
-              vm.connected = resp;
-              this.enabled=resp;
-              vm.$forceUpdate();
-            });
-            this.$store.state.traffic_freiburg.open='liveTraffic';
+        //console.log(this.enabled);
+          if(this.isOpen && !this.enabled){
+            let layer = framework.getLayerByName(uiConfig['lineTrafficLayer']);
+            let polyLayer = framework.getLayerByName(uiConfig['polygonTrafficLayer']);
+            if(layer){
+              if(layer.active){
+                this.activation(layer);
+              }
+            }else{
+              //layer not found
+              throw new Error('Layer, wie in der config unter "lineTrafficLayer" angegeben, konnte nicht gefunden werden!');
+            }
+            if(polyLayer){
+              if(polyLayer.active){
+                this.activation(polyLayer);
+              }
+            }else{
+              //layer not found
+              throw new Error('Layer, wie in der config unter "polygonTrafficLayer" angegeben, konnte nicht gefunden werden!');
+            }
           }else{
-            this.$store.state.traffic_freiburg.open='';
+            this.enabled=false;
+            ws.close();
+            ws.onclose = function(err) {
+              console.log('Connection to live stream will be closed!');
+            };
+            //this.$store.state.traffic_freiburg.open='';
           }
-      }, 
+      },
+      activation(layer){
+        let vm = this;
+        activateWSLayer(layer).then((resp)=>{
+          ws = resp;
+          vm.connected = resp;
+          vm.enabled=true;
+          vm.$forceUpdate();
+        });
+        this.$store.state.traffic_freiburg.open='liveTraffic';
+      }
     }
 }
 </script>

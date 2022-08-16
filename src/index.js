@@ -46,7 +46,7 @@ const store = {
 
 export default {
   version,
-  activateWSLayer,
+  //activateWSLayer,
   // preInitialize
   // postInitialize
   // registerUiPlugin
@@ -67,6 +67,6 @@ export default {
   ),
 };
 
-function addLayer(){
+/* function addLayer(){
   activateWSLayer();
-}
+} */

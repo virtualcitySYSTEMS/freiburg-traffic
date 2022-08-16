@@ -4,37 +4,42 @@ const framework=getFramework();
 let features={};
 let count = 0;
 
-export async function activateWSLayer(){
-    const uiConfig = vcs.vcm.Framework.getInstance().getConfig('plugins').filter((elm)=>elm.name==='traffic_freiburg')[0];
-    var layerName = uiConfig['trafficLayer'];
-    var layer = framework.getLayerByName(layerName);
+export async function activateWSLayer(layer){
     //return connectWS().then((ws)=>{
+      let first = false;
     return connect().then((ws)=>{
       layer.activate().then(()=>{
         layer.fetchData().then(() => {
           features = layer.source.getFeatures();
-          ws.onmessage = function(e, features) {
-            var data = JSON.parse(e.data);
-            var feat = features.filter((el)=>el.getProperty('code')===data.code)[0];
+          ws.onmessage = function(e) {
+            //let feats = layer.source.getFeatures();
+            
+            let data = JSON.parse(e.data);
+            if(!first){
+              console.log(data);
+              first=true;
+            }
+            let feat = features.filter((el)=>el.getProperty('code')===data.code)[0];
             if(feat){
-              //var props=feat.getProperties();
-              feat.set("olcs_extrudedHeight", data.speed);
-              feat.set("speed", data.speed);
-              feat.set("average", data.average);
-              feat.set("speedBucket", data.speedBucket);
-              feat.changed();
+              if(feat["olcs_extrudedHeight"]!= data.speed || feat["speed"]!= data.speed || feat["average"]!= data.average || feat["speedBucket"]!= data.speedBucket){
+                feat.set("olcs_extrudedHeight", data.speed);
+                feat.set("speed", data.speed);
+                feat.set("average", data.average);
+                feat.set("speedBucket", data.speedBucket);
+                feat.changed();
+              }
             }
             //console.log(data);
           }; 
           features.forEach((feat) => {
-            var props=feat.getProperties();
+            let props=feat.getProperties();
             feat.set("olcs_extrudedHeight", props.speed);
             feat.changed();
           });
         });
       });
       //console.log(ws);
-      return Promise.resolve(true);
+      return Promise.resolve(ws);
     }).catch(function(err) {
       console.log(err);
       return Promise.resolve(false);

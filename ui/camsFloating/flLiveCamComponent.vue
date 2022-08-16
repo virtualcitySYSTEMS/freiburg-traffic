@@ -22,7 +22,7 @@
           class="close vcm-btn-icon cancel-icon"
           title="Kamera aus Liste der Live-Kameras entfernen..."
         ></SubButton>
-        <SubButton v-if="records.includes(object.id)" class="vcm-btn-icon recording Rec top-right3"></SubButton>
+        <SubButton v-if="recording" class="vcm-btn-icon recording Rec top-right3"></SubButton>
         <SubButton class="vcm-btn-icon pop-out top-right2" @click="dock(object)" title="Kamera an Menü andocken..." style="cursor: pointer; pointer-events:auto;"/>
         <div>
           <img v-if="!dev" :src="object.url" alt="Hier sollte ein Bild sein" :height="height"/>
@@ -219,6 +219,7 @@ export default {
     return {
       dev:false,
       records:this.$store.state.traffic_freiburg.records,
+      recording:false,
       container: "Kamera "+nextId(),
       resizable: false,
       object:{},
@@ -226,6 +227,7 @@ export default {
       height:200,
       imagWidth:400,
       imagHeight:180,
+      unwatch:'',
       x: 338,
       y: 83,
       toastr: {
@@ -252,6 +254,7 @@ export default {
   created() {
     this.index = this.$store.state.traffic_freiburg.flLiveCams.length-1;
     this.id = this.$store.state.traffic_freiburg.flLiveCams[this.index].id;
+   
   },
   mounted(){
     const uiConfig = vcs.vcm.Framework.getInstance().getConfig('plugins').filter((elm)=>elm.name==='traffic_freiburg')[0];
@@ -260,7 +263,19 @@ export default {
     var vm=this;
     this.getMeta(this.object.url, function(width, height) {
       vm.height = (vm.width/width)*height;
-    })
+    });
+     this.unwatch=this.$store.watch(
+        (state)=>{
+          //console.log(this.$store.state.traffic_freiburg.open);
+         //this.recording=this.$store.state.traffic_freiburg.records.length>0?true:false;
+         this.records=this.$store.state.traffic_freiburg.records;
+         if(this.records.includes(this.object.id)){
+          this.recording=true;
+         }else{
+          this.recording=false;
+         }
+        }
+      )
   },
   computed: {
   },
@@ -294,6 +309,7 @@ export default {
 
     },
     close(o,dock=false) {
+      this.unwatch();
       let index = this.$store.state.traffic_freiburg.flLiveCams.findIndex(x => x.id ===o.id);
       if(index!=-1){
         if(!dock){

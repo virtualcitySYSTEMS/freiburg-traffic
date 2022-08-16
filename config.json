@@ -1,8 +1,10 @@
 {
   "name": "traffic_freiburg",
   "version": "1.0.0",
-  "trafficLayer":"INRIX Line Data",
+  "lineTrafficLayer":"INRIX Line Data",
+  "polygonTrafficLayer":"INRIX POLYGONS",  
   "kameraLayer":"Kameras",
   "dev":false,
-  "wsURL":"wss://pilot.dksr.city/OutboundInterfaces/outbound/inrixFreiburgDataEventTypeStatement"
+  "wsURL2":"wss://pilot.dksr.city/OutboundInterfaces/outbound/inrixFreiburgDataEventTypeStatement",
+  "wsURL":"wss://freiburg-staging.dksr.city/OutboundInterfaces/outbound/inrixFreiburgTestDataEventTypeStatement"
 }

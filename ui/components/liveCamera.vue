@@ -20,12 +20,13 @@
       <div class="message-body">
         <div class="message-content">
             <p style="margin: 0.5rem;"><small style="line-height: 1 !important;"> <i class="fa fa-info-circle" aria-hidden="true" ></i> Bitte selektieren sie per click auf ein Kameraicon, die Kameras die sie sehen wollen. Bis zu 3 Kameras können gleichzeitig angezeigt werden!</small></p>
-            <button v-if="cams.length > 0" class="rec-button" title="Durch Click wird die Aufnahme der oben ausgewählten Kameras gestartet." @click="startRecord()"><i class="fa fa-video-camera" aria-hidden="true" ></i> Aufnahme für alle Kameras starten</button>
+            <button v-if="(cams.length > 0 || flLiveCams.length>0) && !recording" class="rec-button" title="Durch Click wird die Aufnahme der oben ausgewählten Kameras gestartet." @click="startRecord()"><i class="fa fa-video-camera" aria-hidden="true" ></i> Aufnahme für alle Kameras starten</button>
+            <button v-if="recording" class="rec-stop-button" title="Durch Click wird die Aufnahme der oben ausgewählten Kameras gestoppt." @click="stopRecord()"><i class="fa fa-video-camera" aria-hidden="true" ></i> Aufnahme für alle Kameras anhalten</button>
             <div class="container" v-for="(object, i) in cams" :key="i">
               <img v-if="!dev" :src="object.url" alt="Hier sollte ein Bild sein" style="width:280px;">
               <img v-if="dev" src="/global/Freiburg_Traffic/test.png" alt="Hier sollte ein Bild sein" style="width:280px;">
               <div class="bottom-right" style="background-color: white; opacity: 0.6; padding: 2px;">{{object.name}}</div>
-              <button v-if="records.includes(object.id)" class="recording Rec top-right3"></button>
+              <button v-if="records.includes(object.id) && recording" class="recording Rec top-right3"></button>
               <span class="vcm-btn-icon pop-out top-right2" @click="popOut(object,i)" title="Kamera vom Menü lösen..." style="cursor: pointer; pointer-events:auto;"/>
               <span @click="remove(object)" class="vcm-btn-icon closing top-right" title="Kamera aus Liste der Live-Kameras entfernen..." style="cursor: pointer; pointer-events:auto;"></span>
             </div>
@@ -111,9 +112,20 @@
   margin-left:4px;
   margin-bottom: 0.5rem;
   background-color: #409d76;
-
 }
 .rec-button:hover {
+  color: dimgray;
+  background-color: #fff;
+}
+.rec-stop-button {
+  width: 98%;
+  display: block;
+  color: #fff;
+  margin-left:4px;
+  margin-bottom: 0.5rem;
+  background-color: #a00a05;
+}
+.rec-stop-button:hover {
   color: dimgray;
   background-color: #fff;
 }
@@ -294,6 +306,7 @@ export default {
 
          this.isOpen=this.$store.state.traffic_freiburg.open==='liveCamera'?true:false;
          if(this.isOpen){
+          this.flLiveCams= this.$store.state.traffic_freiburg.flLiveCams;
           var layerName = uiConfig['kameraLayer'];
           this.layer = framework.getLayerByName(layerName);
           if(this.layer && !this.layer.active){
@@ -358,6 +371,7 @@ export default {
       return {
         isOpen: this.$store.state.traffic_freiburg.open==='liveCamera'?true:false,
         cams: this.$store.state.traffic_freiburg.activeCams,
+        flLiveCams:[],
         itemsToRequest:[],
         records:this.$store.state.traffic_freiburg.records,
         recording:false,
@@ -386,12 +400,28 @@ export default {
           duration:'minutes'
         }
         recPost.camIds=this.cams.map((el)=>el.id);
+        recPost.camIds.push.apply(recPost.camIds,this.$store.state.traffic_freiburg.flLiveCams.map((el)=>el.id));
         this.$store.state.traffic_freiburg.records=recPost.camIds;
         this.records = recPost.camIds;
         this.records = [...new Set(this.records)];
         this.$store.state.traffic_freiburg.records=this.records;
-        //this.recording=true;
+        this.recording=true;
         toastr["info"]('Kameraaufzeichung wurde an Backend gesendet, mit folgenden Angaben: '+JSON.stringify(recPost) + '\n');
+      },
+      stopRecord(){
+        let recPost={};
+        recPost.stopTime=new Date().toISOString;
+        recPost.metadata={
+          stopTime:'isostring'
+        }
+        recPost.camIds=this.cams.map((el)=>el.id);
+        recPost.camIds.push.apply(recPost.camIds,this.$store.state.traffic_freiburg.flLiveCams.map((el)=>el.id));
+        this.$store.state.traffic_freiburg.records=recPost.camIds;
+        this.records = recPost.camIds;
+        //this.records = [...new Set(this.records)];
+        this.$store.state.traffic_freiburg.records=[];
+        this.recording=false;
+        toastr["info"]('Kameraaufzeichung wurde gestoppt, mit folgenden Angaben: '+JSON.stringify(recPost) + '\n');
       },
       popOut(object,index) {
         // `this` inside methods points to the Vue instance
