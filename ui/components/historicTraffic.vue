@@ -144,20 +144,17 @@ export default {
       },
     },
     created(){
+      this.unwatch=this.$store.watch(
+        (state)=>{
+          //console.log(this.$store.state.traffic_freiburg.open);
+         this.isOpen=this.$store.state.traffic_freiburg.open==='historicTraffic'?true:false;
+        });
     },
     mounted() {
       this.unwatch=this.$store.watch(
         (state)=>{
           //console.log(this.$store.state.traffic_freiburg.open);
          this.isOpen=this.$store.state.traffic_freiburg.open==='historicTraffic'?true:false;
-         if(this.isOpen){
-/*           document.getElementById('startDate').defaultValue = start;
-          document.getElementById('endDate').defaultValue = start; */           
-         }else{
-            if (this.listener) {
-              vcs.vcm.Framework.getInstance().unsubscribeByKey(this.listener);
-            }
-          }
         });
 
     },
@@ -179,7 +176,7 @@ export default {
           const [date, time] =this.formatDate(new Date()).split(' ');
           this.start = date + 'T' + time;
           this.end=date + 'T' + time;
-          let layerName = uiConfig['trafficLayer'];
+          let layerName = uiConfig['lineTrafficLayer'];
           this.layer = framework.getLayerByName(layerName); //var layer
           if (this.layer != "") {
             if(this.layer.hasOwnProperty("featureVisibility")){
@@ -206,23 +203,6 @@ export default {
             }
           });
           vcs.vcm.Framework.getInstance().eventHandler.addExclusiveInteraction(interaction, () => { console.log('Exclusive click interaction removed');});
-/*           if(!this.listener){
-            this.listener = vcs.vcm.Framework.getInstance().subscribe("FEATURE_CLICKED", (id, object, l) => {
-                //console.log(object);
-                if(this.layer.name===l.name){
-                  let props = object.getProperties();
-                  if(vm.itemList.length <50){
-                    vm.itemList.push(props.code);
-                    vm.itemsToRequest.push(id);
-                    vm.itemsToRequest= [...new Set(vm.itemsToRequest)];
-                    vm.itemList= [...new Set(vm.itemList)];
-                    console.log(vm.itemList);
-                  }else{
-                    toastr["error"]('Zu viele Straßensegmente für die Anfrage ausgewählt. Die Begrenzung liegt bei 50 Straßensegmenten\n');
-                  }
-                }
-              });
-            } */
         }else if(!val){
           this.unwatch();
           vcs.vcm.Framework.getInstance().eventHandler.removeExclusive();
@@ -250,6 +230,8 @@ export default {
             this.$store.state.traffic_freiburg.open='historicTraffic';
           }else if(!this.isOpen){
             this.$store.state.traffic_freiburg.open='';
+            this.deleteAll=true;
+            this.deleteAllItems();
           }
       },
       mouseoverItem: function (index) {
@@ -313,6 +295,10 @@ export default {
       },
       startRequest(){
         let recPost={};
+        let user = "vsReaMapReader";
+        let pass = "Yg!reXDujf#1p5_jF";
+        let url = "https://freiburg-staging.dksr.city/backchannel/queries";
+        let authorizationBasic = window.btoa(user + ':' + pass);
         recPost.startTime=this.start;
         recPost.endTime=this.end;
         recPost.idList=this.itemList;
@@ -322,11 +308,63 @@ export default {
           endTime:'isostring',
           idList:'array'
         }
+        recPost= {
+          "senderID" : "VCS-Freiburg",
+          "eventType" : "inrixfreiburgtestdataeventtype",
+          "operationType" : "meanCalculation",
+          "parameter" :
+          {
+            "since" : this.start,
+            "until" : this.end,
+            "fields" : ["speed","speedBucket"]
+          },
+          "condition" : { "code" : this.itemList }
+        }
         //recPost.camIds=this.cams.map((el)=>el.id);
         toastr["info"]('Die Anfrage an das Backend wurde gesendet, mit folgenden Angaben: '+JSON.stringify(recPost) + '\n');
+        let resp = {"mean_speed":{"value":this.randomIntFromInterval(10,50)},"mean_speedBucket":{"value":this.randomIntFromInterval(1,3)}};
+        let vm = this;
+        //setTimeout(function(){vm.applyResults(resp)},10000);
+        axios.post(url, recPost, {headers: {'content-type': 'application/json'},auth: {username: user,password: pass}})
+/*         axios.post(url, {
+            params: JSON.stringify(recPost),
+            headers: {'content-type': 'application/json'},
+            auth: {username: user,password: pass}
+        }) */.then((resp)=>{
+            toastr["success"]('query successfully posted');
+            vcs.vcm.Framework.getInstance().eventHandler.removeExclusive();
+            vm.applyResults(resp.data);
+            //console.log(resp.data);
+        }).catch((err)=>{
+            toastr["error"]('Es gibt Probleme bei der Abfrage für : '+url + '\n Fehler:' +JSON.stringify(err));
+            
+        });
         if (this.layer != "") {this.layer.featureVisibility.clearHighlighting();}
-        this.itemList=[];
+        //this.itemList=[];
         this.itemsToRequest=[];
+      },
+      applyResults(resp){
+        console.log(resp);
+        toastr["warning"]('Antwort vom Backend erhalten: '+JSON.stringify(resp) + '\n');
+        let features=this.layer.source.getFeatures();
+        let feats = [];
+        features.forEach((feat)=>{
+          feat.set("olcs_extrudedHeight",0);
+        })
+        this.itemList.forEach((item)=>{
+          feats.push(features.filter((el)=>el.getProperty('code')===item)[0]);
+        });
+        feats.forEach((feat)=>{
+          feat.set("live_speed", feat.getProperty('speed'));
+          feat.set("speed", resp["mean_speed"].value);
+          feat.set("live_speedBucket", feat.getProperty('speedBucket'));
+          feat.set("speedBucket", Math.round(resp["mean_speedBucket"].value));
+          feat.set("olcs_extrudedHeight", resp["mean_speed"].value);
+          feat.changed();
+        });
+      },
+      randomIntFromInterval(min, max) { // min and max included 
+        return Math.floor(Math.random() * (max - min + 1) + min)
       },
       removeItem(index){
         this.itemList.splice(index,1);
@@ -334,9 +372,50 @@ export default {
       },
       deleteAllItems(){
         if(this.deleteAll){
+          if(this.itemList.length!=0){
+            vcs.vcm.Framework.getInstance().eventHandler.removeExclusive();
+            let features=this.layer.source.getFeatures();
+            let feats = [];
+            features.forEach((feat)=>{
+              feat.set("olcs_extrudedHeight",feat.getProperty('speed'));
+              feat.changed();
+            })
+            this.itemList.forEach((item)=>{
+              feats.push(features.filter((el)=>el.getProperty('code')===item)[0]);
+            });
+            feats.forEach((feat)=>{
+              if(feat.getProperty('live_speedBucket') && feat.getProperty('live_speed')){
+                feat.set("speed", feat.getProperty('live_speed'));
+                feat.set("speedBucket", feat.getProperty('live_speedBucket'));
+                feat.set("olcs_extrudedHeight", feat.getProperty('live_speed'));
+                feat.unset('live_speedBucket');
+                feat.unset('live_speed');
+                feat.changed();
+              }
+            });
+          }
+
           this.itemList=[];
           this.itemsToRequest=[];
           this.deleteAll=false;
+          let vm=this;
+          const interaction = new clickInteraction((feature) => { 
+            if(feature.hasOwnProperty("values_")){
+              if(feature['values_']['code']){
+                let props = feature['values_'];
+                if(vm.itemList.length <50){
+                  vm.itemList.push(props.code);
+                  vm.itemsToRequest.push(feature.getId());
+                  vm.itemsToRequest= [...new Set(vm.itemsToRequest)];
+                  vm.itemList= [...new Set(vm.itemList)];
+                }else{
+                  toastr["error"]('Zu viele Straßensegmente für die Anfrage ausgewählt. Die Begrenzung liegt bei 50 Straßensegmenten\n');
+                }
+              }
+            }
+          });
+          vcs.vcm.Framework.getInstance().eventHandler.addExclusiveInteraction(interaction, () => { console.log('Exclusive click interaction removed');});
+          //this.$store.state.traffic_freiburg.open='historicTraffic';
         }
       }
     }
