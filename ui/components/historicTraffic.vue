@@ -355,11 +355,12 @@ export default {
           feats.push(features.filter((el)=>el.getProperty('code')===item)[0]);
         });
         feats.forEach((feat)=>{
+          let result = resp.filter((el)=>el.Result === feat.getProperty('code'))[0];
           feat.set("live_speed", feat.getProperty('speed'));
-          feat.set("speed", resp["mean_speed"].value);
+          feat.set("speed", result["mean_speed"].value);
           feat.set("live_speedBucket", feat.getProperty('speedBucket'));
-          feat.set("speedBucket", Math.round(resp["mean_speedBucket"].value));
-          feat.set("olcs_extrudedHeight", resp["mean_speed"].value);
+          feat.set("speedBucket", Math.round(result["mean_speedBucket"].value));
+          feat.set("olcs_extrudedHeight", result["mean_speed"].value);
           feat.changed();
         });
       },
