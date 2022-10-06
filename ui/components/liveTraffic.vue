@@ -122,7 +122,8 @@ export default {
         isOpen: this.$store.state.traffic_freiburg.open==='liveTraffic'?true:false,
         enabled:false,
         unwatch:'',
-        connected:false
+        connected:false,
+        ws:''
       }
     },
     methods:{ 
@@ -153,17 +154,19 @@ export default {
             }
           }else{
             this.enabled=false;
-            ws.close();
-            ws.onclose = function(err) {
-              console.log('Connection to live stream will be closed!');
-            };
+            if(this.ws!=''){
+              this.ws.close();
+              this.ws.onclose = function(err) {
+                console.log('Connection to live stream will be closed!');
+              };
+            }
             //this.$store.state.traffic_freiburg.open='';
           }
       },
       activation(layer){
         let vm = this;
         activateWSLayer(layer).then((resp)=>{
-          ws = resp;
+          vm.ws = resp;
           vm.connected = resp;
           vm.enabled=true;
           vm.$forceUpdate();

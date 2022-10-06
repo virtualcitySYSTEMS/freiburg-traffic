@@ -21,13 +21,18 @@
         <div class="message-content">
           <div>
               <p><small><i class="fa fa-info-circle" aria-hidden="true" ></i> Auf Straßensegmente in der Karte clicken um diese zu selektieren!</small></p>
-              <div v-if="itemList.length > 0" style="height: 7rem; overflow-y: auto; overflow-x: hidden;">
+              <div>
+                <input type="checkbox" id="selAll" name="selectAll" v-model="selectAll" @change="selectAllItems">
+                <label for="delete"> Historische Daten für alle Straßen abrufen?</label><br>
+              </div>
+              <div v-if="itemList.length > 0 && !selectAll" style="height: 7rem; overflow-y: auto; overflow-x: hidden;">
                 <!--label class="" style="width:90%">Alle löschen?</label>
                 <input class="" type="checkbox" style="width:12px; height:12px; top:0px;" v-model="deleteAll" @change="deleteAllItems"-->
                 <div>
                   <input type="checkbox" id="delete" name="delete" v-model="deleteAll" @change="deleteAllItems">
                   <label for="delete"> Alle löschen?</label><br>
                 </div>
+               
                 <div v-for="(i,index) in itemList" :key="index" v-on:mouseover="mouseoverItem(index)" v-on:mouseleave="mouseleaveItem()">
                   <b>{{ i }}</b>
                   <i class="fa fa-trash" aria-hidden="true" @click="removeItem(index)" style="display: inline-block; float: right; margin-right: 0.5rem;"></i>
@@ -167,10 +172,20 @@ export default {
         itemsToRequest:[],
         layer:'',
         deleteAll:false,
+        selectAll:false,
         unwatch:'',
       }
     },
     watch: {
+      start: function(val){
+        this.end = val;
+        console.log(this.end);
+      },
+      selectAll:function(val){
+        if(!val){
+          this.itemList=[];
+        }
+      },
       isOpen: function(val){
         if(val){
           const [date, time] =this.formatDate(new Date()).split(' ');
@@ -293,16 +308,34 @@ export default {
           ].join(':')
         );
       },
+      async selectAllItems(){
+        let layerName = uiConfig['lineTrafficLayer'];
+        this.layer = framework.getLayerByName(layerName); //var layer
+        let features=this.layer.source.getFeatures();
+        await Promise.all(features.map(async (feat) => {
+          this.itemList.push(feat.getProperty('code'));
+        }));
+        const [date, time] =this.formatDate(new Date()).split(' ');
+        this.start = date + 'T' + time;
+        this.end=date + 'T' + time;
+      },
       startRequest(){
         let recPost={};
         let user = "vsReaMapReader";
         let pass = "Yg!reXDujf#1p5_jF";
         let url = "https://freiburg-staging.dksr.city/backchannel/queries";
         let authorizationBasic = window.btoa(user + ':' + pass);
+        let since=this.start;
         recPost.startTime=this.start;
         recPost.endTime=this.end;
         recPost.idList=this.itemList;
-        recPost.requestedItems=10;
+        recPost.requestedItems=this.itemList.length-1;
+        if(this.start === this.end){
+          let newDate = new Date(this.start);
+          newDate.setMilliseconds(newDate.getMilliseconds()-181000);
+          const [date, time] =this.formatDate(newDate).split(' ');
+          since = date + 'T' + time;
+        }
         recPost.metadata={
           startTime:'isostring',
           endTime:'isostring',
@@ -314,23 +347,18 @@ export default {
           "operationType" : "meanCalculation",
           "parameter" :
           {
-            "since" : this.start,
+            "since" : since,
             "until" : this.end,
             "fields" : ["speed","speedBucket"]
           },
           "condition" : { "code" : this.itemList }
         }
         //recPost.camIds=this.cams.map((el)=>el.id);
-        toastr["info"]('Die Anfrage an das Backend wurde gesendet, mit folgenden Angaben: '+JSON.stringify(recPost) + '\n');
-        let resp = {"mean_speed":{"value":this.randomIntFromInterval(10,50)},"mean_speedBucket":{"value":this.randomIntFromInterval(1,3)}};
+        toastr["info"]('Die Anfrage an das Backend wurde gesendet'); //, mit folgenden Angaben: '+JSON.stringify(recPost) + '\n');
+        //let resp = {"mean_speed":{"value":this.randomIntFromInterval(10,50)},"mean_speedBucket":{"value":this.randomIntFromInterval(1,3)}};
         let vm = this;
         //setTimeout(function(){vm.applyResults(resp)},10000);
-        axios.post(url, recPost, {headers: {'content-type': 'application/json'},auth: {username: user,password: pass}})
-/*         axios.post(url, {
-            params: JSON.stringify(recPost),
-            headers: {'content-type': 'application/json'},
-            auth: {username: user,password: pass}
-        }) */.then((resp)=>{
+        axios.post(url, recPost, {headers: {'content-type': 'application/json'},auth: {username: user,password: pass}}).then((resp)=>{
             toastr["success"]('query successfully posted');
             vcs.vcm.Framework.getInstance().eventHandler.removeExclusive();
             vm.applyResults(resp.data);
@@ -345,7 +373,7 @@ export default {
       },
       applyResults(resp){
         console.log(resp);
-        toastr["warning"]('Antwort vom Backend erhalten: '+JSON.stringify(resp) + '\n');
+        toastr["warning"]('Antwort vom Backend erhalten! Daten werden verarbeitet...'); //+JSON.stringify(resp) + '\n');
         let features=this.layer.source.getFeatures();
         let feats = [];
         features.forEach((feat)=>{
