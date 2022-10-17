@@ -44,7 +44,7 @@
               </div>
               <div>
                 <h4>Enddatum:</h4>
-                <input type="datetime-local" id="endDate" name="ende" style="width:100%" v-model="end">
+                <input type="datetime-local" id="endDate" name="ende" style="width:100%" v-model="end" :disabled="selectAll">
               </div>
               <button class="send-button" title="Durch Click wird die Aufnahme der oben ausgewählten Kameras gestartet." @click="startRequest()"><i class="fa fa-paper-plane" aria-hidden="true" ></i> Anfrage starten</button>
               <!--toggle-button :value="false" :disabled="live" color="#82C7EB" :width="80" :labels="{checked: 'Historisch', unchecked: 'Aus'}" @change="activateHistoric()" style="float:right; margin-left: 1rem"/-->
@@ -319,67 +319,137 @@ export default {
         this.start = date + 'T' + time;
         this.end=date + 'T' + time;
       },
-      startRequest(){
-        let recPost={};
-        let user = "vsReaMapReader";
-        let pass = "Yg!reXDujf#1p5_jF";
-        let url = "https://freiburg-staging.dksr.city/backchannel/queries";
-        let authorizationBasic = window.btoa(user + ':' + pass);
-        let since=this.start;
-        recPost.startTime=this.start;
-        recPost.endTime=this.end;
-        recPost.idList=this.itemList;
-        recPost.requestedItems=this.itemList.length-1;
-        if(this.start === this.end){
-          let newDate = new Date(this.start);
-          newDate.setMilliseconds(newDate.getMilliseconds()-181000);
-          const [date, time] =this.formatDate(newDate).split(' ');
-          since = date + 'T' + time;
-        }
-        recPost.metadata={
-          startTime:'isostring',
-          endTime:'isostring',
-          idList:'array'
-        }
-        recPost= {
-          "senderID" : "VCS-Freiburg",
-          "eventType" : "inrixfreiburgtestdataeventtype",
-          "operationType" : "meanCalculation",
-          "parameter" :
-          {
-            "since" : since,
-            "until" : this.end,
-            "fields" : ["speed","speedBucket"]
-          },
-          "condition" : { "code" : this.itemList }
-        }
-        //recPost.camIds=this.cams.map((el)=>el.id);
-        toastr["info"]('Die Anfrage an das Backend wurde gesendet'); //, mit folgenden Angaben: '+JSON.stringify(recPost) + '\n');
-        //let resp = {"mean_speed":{"value":this.randomIntFromInterval(10,50)},"mean_speedBucket":{"value":this.randomIntFromInterval(1,3)}};
-        let vm = this;
-        //setTimeout(function(){vm.applyResults(resp)},10000);
-        axios.post(url, recPost, {headers: {'content-type': 'application/json'},auth: {username: user,password: pass}}).then((resp)=>{
-            toastr["success"]('query successfully posted');
-            vcs.vcm.Framework.getInstance().eventHandler.removeExclusive();
-            vm.applyResults(resp.data);
-            //console.log(resp.data);
-        }).catch((err)=>{
-            toastr["error"]('Es gibt Probleme bei der Abfrage für : '+url + '\n Fehler:' +JSON.stringify(err));
+      async startRequest(){
+        if(this.selectAll){
+          let recPost={};
+          let user = "vsReaMapReader";
+          let pass = "Yg!reXDujf#1p5_jF";
+          //let url = "https://freiburg-staging.dksr.city/backchannel/queries";
+          let url = "backchannel/";
+          let authorizationBasic = window.btoa(user + ':' + pass);
+          let since=this.start;
+          recPost.startTime=this.start;
+          recPost.endTime=this.end;
+          recPost.idList=this.itemList;
+          recPost.requestedItems=this.itemList.length-1;
+          if(this.start === this.end){
+            let newDate = new Date(this.start);
+            newDate.setMilliseconds(newDate.getMilliseconds()-181000);
+            const [date, time] =this.formatDate(newDate).split(' ');
+            since = date + 'T' + time;
+          }
+          toastr["info"]('Die Anfrage an das Backend wurde gesendet');
+          recPost.metadata={
+            startTime:'isostring',
+            endTime:'isostring',
+            idList:'array'
+          }
+          let items=0;
+          for(var i=0;i<5;i++){
+            let itemsToQuery = this.itemList.slice().splice(items,500);
+            console.log(itemsToQuery);
             
-        });
-        if (this.layer != "") {this.layer.featureVisibility.clearHighlighting();}
-        //this.itemList=[];
-        this.itemsToRequest=[];
+            recPost= {
+              "senderID" : "VCS-Freiburg",
+              "eventType" : "inrixfreiburgtestdataeventtype",
+              "operationType" : "meanCalculation",
+              "parameter" :
+              {
+                "since" : since,
+                "until" : this.end,
+                "fields" : ["speed","speedBucket"]
+              },
+              "condition" : { "code" : itemsToQuery }
+            }
+            let vm = this;
+            await axios.post(url, recPost, {timeout: 2 * 60 * 1000, headers: {'content-type': 'application/json'},auth: {username: user,password: pass}}).then((resp)=>{
+                vcs.vcm.Framework.getInstance().eventHandler.removeExclusive();
+                vm.applyResults(resp.data,JSON.parse(JSON.stringify(itemsToQuery)));
+                return Promise.resolve(true);
+            }).catch((err)=>{
+                toastr["error"]('Es gibt Probleme bei der Abfrage für : '+url);
+                this.itemsToRequest=[];
+                this.itemList=[];
+            });
+            items+=500;
+            if(i===4){
+              this.itemList=[];
+              this.itemsToRequest=[];
+              this.selectAll=false;
+              toastr["warning"]('Antwort vom Backend erhalten! Daten werden verarbeitet...');
+            }
+            if (this.layer != "") {this.layer.featureVisibility.clearHighlighting();}
+            //this.itemList=[];
+            
+          }
+
+        }else{
+          let recPost={};
+          let user = "vsReaMapReader";
+          let pass = "Yg!reXDujf#1p5_jF";
+          //let url = "https://freiburg-staging.dksr.city/backchannel/queries";
+          let url = "backchannel/";
+          let authorizationBasic = window.btoa(user + ':' + pass);
+          let since=this.start;
+          recPost.startTime=this.start;
+          recPost.endTime=this.end;
+          recPost.idList=this.itemList;
+          recPost.requestedItems=this.itemList.length-1;
+          if(this.start === this.end){
+            let newDate = new Date(this.start);
+            newDate.setMilliseconds(newDate.getMilliseconds()-181000);
+            const [date, time] =this.formatDate(newDate).split(' ');
+            since = date + 'T' + time;
+          }
+          recPost.metadata={
+            startTime:'isostring',
+            endTime:'isostring',
+            idList:'array'
+          }
+          recPost= {
+            "senderID" : "VCS-Freiburg",
+            "eventType" : "inrixfreiburgtestdataeventtype",
+            "operationType" : "meanCalculation",
+            "parameter" :
+            {
+              "since" : since,
+              "until" : this.end,
+              "fields" : ["speed","speedBucket"]
+            },
+            "condition" : { "code" : this.itemList }
+          }
+          //recPost.camIds=this.cams.map((el)=>el.id);
+          toastr["info"]('Die Anfrage an das Backend wurde gesendet'); //, mit folgenden Angaben: '+JSON.stringify(recPost) + '\n');
+          //let resp = {"mean_speed":{"value":this.randomIntFromInterval(10,50)},"mean_speedBucket":{"value":this.randomIntFromInterval(1,3)}};
+          let vm = this;
+          //setTimeout(function(){vm.applyResults(resp)},10000);
+          axios.post(url, recPost, {timeout: 2 * 60 * 1000, headers: {'content-type': 'application/json'},auth: {username: user,password: pass}}).then((resp)=>{
+              toastr["success"]('query successfully posted');
+              vcs.vcm.Framework.getInstance().eventHandler.removeExclusive();
+              vm.applyResults(resp.data, JSON.parse(JSON.stringify(vm.itemList)));
+              vm.itemList=[];
+              //console.log(resp.data);
+          }).catch((err)=>{
+              toastr["error"]('Es gibt Probleme bei der Abfrage für : '+url);
+              this.itemsToRequest=[];
+              this.itemList=[];
+          });
+          if (this.layer != "") {this.layer.featureVisibility.clearHighlighting();}
+          //this.itemList=[];
+          this.itemsToRequest=[];
+        }
       },
-      applyResults(resp){
+      applyResults(resp, items){
         console.log(resp);
-        toastr["warning"]('Antwort vom Backend erhalten! Daten werden verarbeitet...'); //+JSON.stringify(resp) + '\n');
+        if(!this.selectAll){
+          toastr["warning"]('Antwort vom Backend erhalten! Daten werden verarbeitet...'); //+JSON.stringify(resp) + '\n');
+        }
         let features=this.layer.source.getFeatures();
         let feats = [];
         features.forEach((feat)=>{
           feat.set("olcs_extrudedHeight",0);
         })
-        this.itemList.forEach((item)=>{
+       items.forEach((item)=>{
           feats.push(features.filter((el)=>el.getProperty('code')===item)[0]);
         });
         feats.forEach((feat)=>{
@@ -391,6 +461,7 @@ export default {
           feat.set("olcs_extrudedHeight", result["mean_speed"].value);
           feat.changed();
         });
+        //this.itemList=[];
       },
       randomIntFromInterval(min, max) { // min and max included 
         return Math.floor(Math.random() * (max - min + 1) + min)
