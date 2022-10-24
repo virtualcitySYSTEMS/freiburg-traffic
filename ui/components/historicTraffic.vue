@@ -424,11 +424,17 @@ export default {
           let vm = this;
           //setTimeout(function(){vm.applyResults(resp)},10000);
           axios.post(url, recPost, {timeout: 2 * 60 * 1000, headers: {'content-type': 'application/json'},auth: {username: user,password: pass}}).then((resp)=>{
+            if(resp.data.length!=0){
               toastr["success"]('query successfully posted');
               vcs.vcm.Framework.getInstance().eventHandler.removeExclusive();
               vm.applyResults(resp.data, JSON.parse(JSON.stringify(vm.itemList)));
               vm.itemList=[];
               //console.log(resp.data);
+            }else{
+              toastr["error"]('Die Antwort vom Bachchannel ist leer!');
+              vm.itemList=[];
+            }
+
           }).catch((err)=>{
               toastr["error"]('Es gibt Probleme bei der Abfrage für : '+url);
               this.itemsToRequest=[];
@@ -454,12 +460,14 @@ export default {
         });
         feats.forEach((feat)=>{
           let result = resp.filter((el)=>el.Result === feat.getProperty('code'))[0];
-          feat.set("live_speed", feat.getProperty('speed'));
-          feat.set("speed", result["mean_speed"].value);
-          feat.set("live_speedBucket", feat.getProperty('speedBucket'));
-          feat.set("speedBucket", Math.round(result["mean_speedBucket"].value));
-          feat.set("olcs_extrudedHeight", result["mean_speed"].value);
-          feat.changed();
+          if(result){
+            feat.set("live_speed", feat.getProperty('speed'));
+            feat.set("speed", result["mean_speed"].value);
+            feat.set("live_speedBucket", feat.getProperty('speedBucket'));
+            feat.set("speedBucket", Math.round(result["mean_speedBucket"].value));
+            feat.set("olcs_extrudedHeight", result["mean_speed"].value);
+            feat.changed();
+          }
         });
         //this.itemList=[];
       },
