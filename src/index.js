@@ -24,19 +24,6 @@ const store = {
     flHistoricCams:[],
     records:[],
   },
-/*   state: {
-    ticker: 0,
-    apiKey: 0,
-    charts: [],
-    stylings: [],
-    statistics: [],
-    experiments:[],
-    scenarios:[],
-    cases:[],
-    dashboard: [],
-    loadedCases:[]
-    //contextGraph: graph
-  }, */
   mutations: {
     setTicker(state, ticker) {
       state.ticker = ticker;

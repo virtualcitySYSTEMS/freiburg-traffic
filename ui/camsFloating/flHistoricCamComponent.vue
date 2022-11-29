@@ -9,7 +9,7 @@
     :resizable=true
     style="background-color:#97999b"
     class="vcm-base-dye01"
-    :lock-aspect-ratio="true"
+    :lock-aspect-ratio="false"
     @resizing="onResize" @resizestop="onResizeStop"
     :handles="['tl','tr','br','bl']"
   >
@@ -21,12 +21,14 @@
           @click="close(object)"
           class="close vcm-btn-icon cancel-icon"
           title="Kamera aus Liste der Live-Kameras entfernen..."
+          style="z-index: 999;"
         ></SubButton>
-        <SubButton class="vcm-btn-icon pop-out top-right2" @click="dock(object)" title="Kamera an Menü andocken..." style="cursor: pointer; pointer-events:auto;"/>
-        <div>
+        <SubButton class="vcm-btn-icon pop-out top-right2" @click="dock(object)" title="Kamera an Menü andocken..." style="cursor: pointer; pointer-events:auto; z-index: 999;"/>
+        <div v-if="object.url">
           <img v-if="!dev" :src="object.url" alt="Hier sollte ein Bild sein" :height="height"/>
           <img v-if="dev" src="/global/Freiburg_Traffic/test.png" alt="Hier sollte ein Bild sein" :height="height"/>
         </div>
+        <div v-else class="diagram-div" :id="'cam-'+object.id.replaceAll('.','-')" style="height:280px;"></div>
         <div class="bottom-right" style="background-color: white; opacity: 0.6; padding: 2px;">{{object.name}}</div>
         <!--button v-if="recording" class="recording Rec top-right3"></button-->
         <!--span @click="remove(i)" class="vcm-btn-icon closing top-right" title="Kamera entfernen..." style="cursor: pointer; pointer-events:auto;"></span-->
@@ -186,6 +188,7 @@
 <script type="text/babel">
 import Draggable from "vue-draggable-resizable";
 import "vue-draggable-resizable/dist/VueDraggableResizable.css";
+import {createTrafficChart, getRandomFloat} from '../../src/helpers'
 import toastr from "toastr";
 toastr.options={
   "closeButton": true,
@@ -248,15 +251,27 @@ export default {
   created() {
     this.index = this.$store.state.traffic_freiburg.flHistoricCams.length-1;
     this.id = this.$store.state.traffic_freiburg.flHistoricCams[this.index].id;
+    
   },
   mounted(){
     const uiConfig = vcs.vcm.Framework.getInstance().getConfig('plugins').filter((elm)=>elm.name==='traffic_freiburg')[0];
     this.dev = uiConfig['dev'];
     this.object=this.$store.state.traffic_freiburg.flHistoricCams[this.index];
     var vm=this;
-    this.getMeta(this.object.url, function(width, height) {
-      vm.height = (vm.width/width)*height;
-    })
+    if(this.object.hasOwnProperty('url')){
+      this.getMeta(vm.object.url, function(width, height) {
+        vm.height = (vm.width/width)*height;
+      })
+    }else{
+      this.height = 310;
+      this.width = 450;
+      vm.$nextTick(function () {
+          setTimeout(function() {
+            vm.addChart(); //empty!!!!
+          }, 100);
+      });
+    }
+
   },
   computed: {
   },
@@ -270,6 +285,9 @@ export default {
     },
     onResizeStop: function (x, y, width, height) {
       this.resizing = false
+    },
+    addChart(){
+      createTrafficChart(this.object.id,this.object.values);
     },
     getMeta(url, callback) {
         var img = new Image();

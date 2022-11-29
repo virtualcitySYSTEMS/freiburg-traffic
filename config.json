@@ -6,5 +6,6 @@
   "kameraLayer":"Kameras",
   "dev":false,
   "wsURL2":"wss://pilot.dksr.city/OutboundInterfaces/outbound/inrixFreiburgDataEventTypeStatement",
-  "wsURL":"wss://freiburg-staging.dksr.city/OutboundInterfaces/outbound/inrixFreiburgTestDataEventTypeStatement"
+  "wsURL":"wss://freiburg-staging.dksr.city/OutboundInterfaces/outbound/inrixFreiburgTestDataEventTypeStatement",
+  "wsCamURL":"wss://freiburg-staging.dksr.city/OutboundInterfaces/outbound/FreiCameraVehicleIdEventTypeStatement"
 }

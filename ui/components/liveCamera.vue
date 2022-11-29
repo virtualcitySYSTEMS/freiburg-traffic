@@ -236,6 +236,7 @@ import { ToggleButton } from 'vue-js-toggle-button';
 import toastr from 'toastr';
 import clickInteraction from "../../src/clickInteraction";
 const uiConfig = vcs.vcm.Framework.getInstance().getConfig('plugins').filter((elm)=>elm.name==='traffic_freiburg')[0];
+import {icon} from '../../src/helpers'
 toastr.options = {
   "closeButton": true,
   "debug": false,
@@ -280,11 +281,16 @@ export default {
       itemsToRequest: function (val, oldval) {
         if (this.layer != "") {this.layer.featureVisibility.clearHighlighting();}
         var styleSelected = new ol.style.Style({
+            image: new ol.style.Icon({
+              scale:1,
+              src: `data:image/svg+xml,${encodeURIComponent(icon)}`,
+            }),
+          });/*new ol.style.Style({
           image: new ol.style.Icon({
             scale:1,
             src: 'global/Freiburg_Traffic/cam_selected.png',
           }),
-        });
+        });*/
 /*         var style = new ol.style.Style({
             stroke: new ol.style.Stroke({
                 color: [193, 6, 193, 1],
@@ -300,6 +306,21 @@ export default {
     },
     mounted() {
       this.dev = uiConfig['dev'];
+      var layerName = uiConfig['kameraLayer'];
+          this.layer = framework.getLayerByName(layerName);
+          var styleSelected = new ol.style.Style({
+            image: new ol.style.Icon({
+              scale:1,
+              src: `data:image/svg+xml,${encodeURIComponent(icon)}`,
+            }),
+          });
+          let features=this.layer.source.getFeatures();
+          features.forEach((feat)=>{
+            feat.setStyle(styleSelected);
+/*             this.layer.featureVisibility.highlight({
+                  [feat.id]: styleSelected
+              }); */
+          })
       this.unwatch=this.$store.watch(
         (state)=>{
           //console.log(this.$store.state.traffic_freiburg.open);

@@ -3,19 +3,12 @@
      <SubButton @click="close()" class="close vcm-btn-icon cancel-icon close-btn"></SubButton>
     <div v-if="mounted">
         <h2>Verkehrsinformation</h2>
-        <!--button @click="activate()">Live Verkehr</button-->
         <liveTraffic/>
         <historicTraffic/>
-        <liveCamera/>
-        <historicCamera/>
-        <!--div style="display: inline-block; margin-top: 1rem;">
-            <p style="display: inline; line-height: 1.4rem;">Live Verkehr</p>
-            <toggle-button :value="false" :disabled="historic" color="#82C7EB" :width="60" :labels="{checked: 'Live', unchecked: 'Aus'}" @change="activateLive()" style="float:right; margin-left: 1rem"/>
-        </div-->
-        <!--div style="display: inline-block; margin-top: 1rem;">
-            <p style="display: inline; line-height: 1.4rem;">Historischer Verkehr</p>
-            <toggle-button :value="false" :disabled="live" color="#82C7EB" :width="60" :labels="{checked: 'Historisch', unchecked: 'Aus'}" @change="activateHistoric()" style="float:right; margin-left: 1rem"/>
-        </div-->
+        <liveTrafficCamera/>
+        <historicTrafficCamera/>
+        <!--liveCamera/>
+        <historicCamera/-->
     </div>
 
 </div>
@@ -136,6 +129,8 @@ import liveTraffic from '../components/liveTraffic.vue';
 import historicTraffic from '../components/historicTraffic';
 import liveCamera from '../components/liveCamera.vue';
 import historicCamera from '../components/historicCamera';
+import liveTrafficCamera from '../trafficCams/liveTrafficCamera.vue';
+import historicTrafficCamera from '../trafficCams/historicTrafficCamera.vue';
 import { ToggleButton } from 'vue-js-toggle-button';
 export default {
     name: "traffic",
@@ -144,7 +139,9 @@ export default {
          liveTraffic,
          historicTraffic,
          liveCamera,
-         historicCamera
+         historicCamera,
+         liveTrafficCamera,
+         historicTrafficCamera
     },
     data() {
         return {
@@ -164,15 +161,6 @@ export default {
         //console.log(this.mounted);
     },
     methods: {
-/*         activateLive(){
-            this.live=!this.live;
-            this.historic=false;
-           // this.connected=activateWSLayer();
-        },
-        activateHistoric(){
-            this.live=false;
-            this.historic=!this.historic;
-        }, */
         close() {
             vcs.ui.router.push('home');
         },
