@@ -403,7 +403,7 @@ export default {
         toastr["info"]('Die Anfrage an das Backend wurde gesendet'); 
         let vm = this;
         //setTimeout(function(){vm.applyResults(resp)},10000);
-        axios.get('https://freiburg-staging.dksr.city/UrbanPulseData/historic/sensordata?sid=d11f7e88-7021-4a79-aac5-454a7164da36', {timeout: 2 * 60 * 1000, headers: {'content-type': 'application/json'},auth: {username: user,password: pass}})
+        axios.get('https://freiburg-staging.dksr.city/UrbanPulseData/historic/sensordata?sid=2376c10c-ba74-4cf4-af31-314fe8bf418d', {timeout: 2 * 60 * 1000, headers: {'content-type': 'application/json'},auth: {username: user,password: pass}})
         .then((resp)=>{
           this.itemList.forEach((elm)=>{
             let index = this.$store.state.traffic_freiburg.activeHistoricCams.findIndex(x => x.id ===elm.camId);

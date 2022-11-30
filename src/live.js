@@ -59,6 +59,7 @@ export async function activateWSCameraLayer(layer){
     layer.activate().then(()=>{
       layer.fetchData().then(() => {
         features = layer.source.getFeatures();
+        let counter = 0;
         ws.onmessage = function(e) {
           //let feats = layer.source.getFeatures();
           let data = JSON.parse(e.data);
@@ -68,11 +69,12 @@ export async function activateWSCameraLayer(layer){
           } */
           let feat = features.filter((el)=>el.getProperty('id')===data.host)[0];
           let host = data.host;
-          if(feat){
+          if(feat && (counter === 0 || counter === 10)){
+
             // Do something with the feature => update ICon
             //https://freiburg-staging.dksr.city/UrbanPulseData/historic/sensordata?sid=d11f7e88-7021-4a79-aac5-454a7164da36
             //axios.get('https://freiburg-staging.dksr.city/UrbanPulseData/historic/sensordata?sid=5663e4ed-f578-4513-806d-b7ce88c10fd7', {timeout: 2 * 60 * 1000, headers: {'content-type': 'application/json'},auth: {username: user,password: pass}}).then((resp)=>{
-              axios.get('https://freiburg-staging.dksr.city/UrbanPulseData/historic/sensordata?sid=d11f7e88-7021-4a79-aac5-454a7164da36', {timeout: 2 * 60 * 1000, headers: {'content-type': 'application/json'},auth: {username: user,password: pass}}).then((resp)=>{
+              axios.get('https://freiburg-staging.dksr.city/UrbanPulseData/historic/sensordata?sid=2376c10c-ba74-4cf4-af31-314fe8bf418d', {timeout: 2 * 60 * 1000, headers: {'content-type': 'application/json'},auth: {username: user,password: pass}}).then((resp)=>{
               if(!first){
 
                 console.log(resp.data.sensordata[0]);
@@ -93,6 +95,10 @@ export async function activateWSCameraLayer(layer){
                 layer.activate();
               }
             })
+          }
+          counter++;
+          if(counter === 10){
+            counter = 1
           }
         }; 
         features.forEach((feat) => {

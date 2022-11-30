@@ -231,7 +231,7 @@ export function createTrafficChart(id,values={}){
       Object.keys(values).forEach((key)=>{
          if(key.includes('PKW')){
             options.series.push({name:'PKW' , "data": [values[key]]});
-            options.yaxis.push({
+/*             options.yaxis.push({
                seriesName: 'PKW',
                show: false,
                axisTicks: {
@@ -249,12 +249,12 @@ export function createTrafficChart(id,values={}){
                tooltip: {
                   enabled: false
                }
-            })
+            }) */
             //options.xaxis.categories = values.timestamp;
          }
          if(key.includes('Fahrrad')){
             options.series.push({name:'Fahrrad' , "data": [values[key]]});
-            options.yaxis.push({
+/*             options.yaxis.push({
                seriesName: 'Fahrrad',
                show: false,
                axisTicks: {
@@ -272,11 +272,11 @@ export function createTrafficChart(id,values={}){
                tooltip: {
                   enabled: false
                }
-            })
+            }) */
          }
          if(key.includes('Motorrad')){
             options.series.push({name:'Motorrad' , "data": [values[key]]});
-            options.yaxis.push({
+/*             options.yaxis.push({
                seriesName: 'Motorrad',
                show: false,
                axisTicks: {
@@ -294,11 +294,11 @@ export function createTrafficChart(id,values={}){
                tooltip: {
                   enabled: false
                }
-            })
+            }) */
          }
          if(key.includes('Van')){
             options.series.push({name:'Van' , "data": [values[key]]});
-            options.yaxis.push({
+/*             options.yaxis.push({
                seriesName: 'Van',
                show: false,
                axisTicks: {
@@ -316,11 +316,11 @@ export function createTrafficChart(id,values={}){
                tooltip: {
                   enabled: false
                }
-            })
+            }) */
          }
          if(key.includes('LKW_')){
             options.series.push({name:'LKW' , "data": [values[key]]});
-            options.yaxis.push({
+/*             options.yaxis.push({
                seriesName: 'LKW',
                show: false,
                axisTicks: {
@@ -338,11 +338,11 @@ export function createTrafficChart(id,values={}){
                tooltip: {
                   enabled: false
                }
-            })
+            }) */
          }
          if(key.includes('LKWAnhanger_')){
             options.series.push({name:'LKWAnhanger' , "data": [values[key]]});
-            options.yaxis.push({
+/*             options.yaxis.push({
                seriesName: 'LKWAnhanger',
                show: false,
                axisTicks: {
@@ -360,7 +360,7 @@ export function createTrafficChart(id,values={}){
                tooltip: {
                   enabled: false
                }
-            })
+            }) */
          }
          if(key.includes('speed')){
 /*             options.series.push({name:'speed' , "data": [values[key]]});
